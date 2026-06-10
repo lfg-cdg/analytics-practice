@@ -1,0 +1,1 @@
+# SQL practice до стажки
