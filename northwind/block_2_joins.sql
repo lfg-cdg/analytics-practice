@@ -43,3 +43,20 @@ ORDER BY category_id, price_rank
 
 * Тип данных колонки unit_price - real, что не позволяет сразу обернуть среднюю цену в ROUND.
   Для начала требуется перевести в нужный тип с помощью ::numeric
+
+-- Задача 2. Вывести клиентов, их заказы, стоимость этих заказов, а также посчитать накопительный итог для каждого клиента --
+
+WITH orders_total AS (
+	SELECT customer_id, contact_name, order_id, order_date, ROUND(SUM(unit_price * quantity)::numeric, 2) AS order_price
+	FROM customers
+		INNER JOIN orders USING (customer_id)
+		INNER JOIN order_details USING (order_id)
+	GROUP BY order_id, customer_id, contact_name, order_date)
+
+SELECT *, SUM(order_price) OVER (PARTITION BY customer_id ORDER BY order_date) AS running_total
+FROM orders_total
+ORDER BY contact_name, order_date; 
+
+* Для начала создать CTE где будут клиенты, их заказы и стоимость этих заказов, сгруппированные по id заказа. Затем уже добавить 
+  колонку с накопительным итогом. Окно выбираем по customer_id а не по contact_name чтобы не было ошибок если у 2х людей
+  одинаковое имя.
