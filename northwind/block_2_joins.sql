@@ -74,4 +74,36 @@ SELECT *, ROUND((order_price / (SUM(order_price) OVER(PARTITION BY employee_id))
 FROM t
 analytics_practice-# ORDER BY order_id;
 
+Задача 4. Для каждого заказа: дата заказа, дата предыдущего заказа этого клиента и разрыв в днях -- 
 
+WITH t AS (
+	SELECT order_id, customer_id, order_date, LAG(order_date) OVER(PARTITION BY customer_id ORDER BY order_date) AS prev_order_date
+	FROM orders
+)
+SELECT *, (order_date::date - prev_order_date::date) AS days_between_orders
+FROM t
+ORDER BY customer_id, order_date;
+
+-- Задача 4. Для каждого заказа клиента: сумма заказа, сумма его предыдущего заказа и разница между ними -- 
+
+WITH t AS (
+    SELECT customer_id, order_id, order_date,
+           ROUND(SUM(unit_price * quantity)::numeric, 2) AS order_price
+    FROM orders INNER JOIN order_details USING (order_id)
+    GROUP BY customer_id, order_id
+)
+SELECT *,
+       LAG(order_price) OVER (PARTITION BY customer_id ORDER BY order_date) AS prev_order_price,
+       order_price - LAG(order_price) OVER (PARTITION BY customer_id ORDER BY order_date) AS difference
+FROM t
+ORDER BY customer_id, order_date;
+
+-- Задача 5. Для каждого заказа: сколько дней до следующего заказа этого клиента --
+
+WITH t AS (
+SELECT customer_id, order_id, order_date, LEAD(order_date) OVER(PARTITION BY customer_id ORDER BY order_date) AS next_order_date
+FROM orders
+)
+SELECT *,
+(next_order_date - order_date) AS days_until_next_order FROM t
+ORDER BY customer_id, order_date;
