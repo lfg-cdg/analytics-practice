@@ -60,3 +60,18 @@ ORDER BY contact_name, order_date;
 * Для начала создать CTE где будут клиенты, их заказы и стоимость этих заказов, сгруппированные по id заказа. Затем уже добавить 
   колонку с накопительным итогом. Окно выбираем по customer_id а не по contact_name чтобы не было ошибок если у 2х людей
   одинаковое имя.
+
+-- Задача 3. Для каждого заказа: сотрудник, сумма заказа, и какой % этот заказ составляет от всей выручки этого сотрудника.
+
+WITH t AS (
+	SELECT order_id, employee_id, first_name, ROUND(SUM(unit_price * quantity)::numeric, 2) AS order_price
+	FROM employees
+		INNER JOIN orders USING (employee_id)
+		INNER JOIN order_details USING (order_id)
+	GROUP BY order_id, employee_id, first_name)
+
+SELECT *, ROUND((order_price / (SUM(order_price) OVER(PARTITION BY employee_id))) * 100::numeric, 2) AS percentage_of_total_employee_revenue
+FROM t
+analytics_practice-# ORDER BY order_id;
+
+
